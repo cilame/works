@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import numpy as np
 
 class GridLable:
@@ -40,8 +41,12 @@ class GridLable:
         sigy = y / self._gridkh - locy
         return locx,locy,sigx,sigy
 
-    # test other zero
     def create_label(self, xywh):
+        '''        
+        根据 x,y,w,h 创建相应的 Yolo Label
+        创建生成的 Label 主要是只有相应的 gridx, gridy 才有数据
+        其他部分设置为零处理。
+        '''
         locx,locy,sigx,sigy = self._create_sig(xywh)
         indx = self._create_grid()
         new_indx = indx + [sigy,sigx]
@@ -51,7 +56,6 @@ class GridLable:
 
         
 if __name__ == "__main__":
-    # cur test
     s = GridLable(twth = (90,90), gridwh = (3,3))
-    print s.create_label((15, 59, 30, 30))#yxhw
+    print s.create_label((15, 59, 30, 30))
     
