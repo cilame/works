@@ -7,8 +7,8 @@ import os
 from GridLable import *
 
 rd_outwin = False
-w,h = 90,90
-gridw,gridh = 3,3
+w,h = 448,448
+gridw,gridh = 14,14
 
 f = open('pic.txt','a')
 if not os.path.isdir('pic'):
@@ -49,7 +49,7 @@ def get_anchors(lens,grid):
 
 # 根据总长度和 grid 获取一个简单的随机边框（偏差为 0.9~1.7 倍化切块的长宽的）大小
 def get_rdscal(lens,grid):
-    return int((rd.random()*.8+.9)*lens/grid)
+    return int((rd.random()*8+.9)*lens/grid)
 
 # 就是前两个函数的综合利用，通过长宽以及长宽上的 grid 获取相应的随机边框及其坐标框
 def get_rdxywh(w,h,gridw,gridh,num):
@@ -91,15 +91,15 @@ def create_samples(w,h,gridw,gridh,num=2):
 
 
 
-s = GridLable(twth = (w,h), gridwh = (3,3))
+s = GridLable(twth = (w,h), gridwh = (gridw,gridh))
 for i in range(20):
     picpath = 'pic/%05d.jpg'%i
-    pic,all_created = create_samples(w,h,gridw,gridh,num=2)
+    pic,all_created = create_samples(w,h,gridw,gridh,num=3)
     # num 代表在一张图片里面添加的边框数
     # 因为颜色限制，最大只能选 3
     cv2.imwrite(picpath,pic)
     for xx,yy,ww,hh,color in all_created:
         print '{} {} {} {} {} {}'.format(picpath,xx,yy,ww,hh,color)
-##        print s.create_label((xx,yy,ww,hh))
+        print s.create_label((xx,yy,ww,hh))[1:]
     
 
