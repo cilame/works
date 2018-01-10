@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
+
 import os, re, json, string, tarfile
+
 
 class DataLoader(object):
     """
@@ -48,7 +50,7 @@ class DataLoader(object):
         return self.datas
 
     # 读取单个 txt 文件数据
-    def _load_onetxt(self, pathname):
+    def _load_onetxt(self, pathname, to_value=True):
         s = open(pathname).readlines()
         for indx,i in enumerate(s):
             _n = json.loads(i)
@@ -62,11 +64,12 @@ class DataLoader(object):
             d = self._check_email(_email)
             if a and b and c and d:
                 self._all_id.add(_id)
-                self.datas.append(i)
+                if to_value:
+                    self.datas.append((_id,_age,_name,_email))
+                else:
+                    self.datas.append(_n)
             else:
                 self._print('*[ WARNING ] load fail: {} {} {} {}'.format(_id,_age,_name,_email))
-
-
 
     # 检查id
     # 类型判断(int)和查重
@@ -85,8 +88,8 @@ class DataLoader(object):
     # 另外名字的判断还要检查名字的字符串里面没有这些奇怪符号
     # string.punctuation 就是这些符号 '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
     def _check_name(self, _name):
-##        tp = isinstance(_name,basestring)
-##        return tp and _name.strip() != '' and all(map(lambda i:i not in _name,string.punctuation))
+        # tp = isinstance(_name,basestring)
+        # return tp and _name.strip() != '' and all(map(lambda i:i not in _name,string.punctuation))
         return True
 
     # 检查email
@@ -101,8 +104,107 @@ class DataLoader(object):
         if self._log:
             print(args)
 
+
+
+
+
+
+
+
+
+
+
+
+import pymysql
+
+class DB_Connecter(object):
+    def __init__(self, ip, port, usr, psw, db, tb, over_write=False):
+        self._ip = ip
+        self._usr = usr
+        self._psw = psw
+        self._db = db
+        self._port = port
+        self._tb = tb
+        self._over_write = over_write  # 是否覆盖写入 table    ，True 则有表格则删除重新创建
+        self.db = pymysql.Connect(host=self._ip,
+                                  port=self._port,
+                                  user=self._usr,
+                                  password=self._psw)
+
+    def _connect_t(self):
+        self.db = pymysql.connect(host=self._ip,
+                                  port=self._port,
+                                  user=self._usr,
+                                  passwd=self._psw,
+                                  db=self._db)
+        return self.db
+
+    def inserts(self, inserts_list, exe_num=100):
+        t1 = time.time()
+        self._connect_t()
+        if self._over_write:
+            self._del_old_table()
+        c = self.db.cursor()
+        _insert =   "insert into "+ self._tb +\
+                    "(id, age, name, email) " +\
+                    "values (%s, %s, %s, %s)"
+
+        len_list = len(inserts_list)
+        num,x = int(len_list/exe_num),len_list%exe_num
+        if x > 0:
+            num += 1
+
+        p = int(num/10)
+        for i in range(num):
+            if i%p==0:
+                print('inserting %.2f %%'%(float(i)/num*100))
+            sliceA,sliceB = i*exe_num,(i+1)*exe_num
+            try:
+                c.executemany(_insert,inserts_list[sliceA:sliceB])
+                self.db.commit()
+            except:
+                print('[ WARNING ] insert fail:','%d/%d'%(i,num))
+                self.db.rollback()
+        self.db.close()
+        print("insert cost time: %.3f s"%(time.time()-t1))
+
+    def _del_old_table(self):
+        c = self.db.cursor()
+        c.execute("drop table if exists {}".format(self._tb))
+        c.execute("create table "+self._tb+" (id int ,age int, name char(30),email char(50))")
+        c.close()
+
+    def create_newdb(self):
+        c = self.db.cursor()
+        c.execute("create database if not exists {}".format(self._db))
+        c.close()
+        
+
+
+
+
+
+
+
+import time
+
 if __name__ == '__main__':
-    s = DataLoader('./data.tar.gz')
-    #s = DataLoader('./data.tar.gz', logging=False)
-    datas = s.load_datas()
+    # 这里如果不打印清洗过程添加参数 logging=False
+    loader = DataLoader('./data.tar.gz')
+    datas  = loader.load_datas()
+
+
+
+    args = ('localhost',    # 地址
+            3306,           # 端口
+            'root',         # 账号
+            '123456',       # 密码
+            'test_db',      # 库名
+            "test_table")   # 表名
+                
+    conn = DB_Connecter(*args, over_write=True)
+    conn.create_newdb()
+    conn.inserts(datas,exe_num=500)# 为提高插入效率默认每一百个提交一次
+    
+    
 
