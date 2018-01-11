@@ -26,7 +26,7 @@ class DataLoader(object):
         if extract:
             self.extract()
 
-    # 解压缩，根据测试文件，目前只支持 tgz 解压
+    # 解压缩，根据测试文件，当前只支持 tgz 解压
     def extract(self):
         if not os.path.isdir(self._extract_path):
             tarobj = tarfile.open(self._filename, "r:gz")
@@ -118,6 +118,10 @@ class DataLoader(object):
 import pymysql
 
 class DB_Connecter(object):
+    """
+    测试函数所用的数据库接口封装
+    因无更多要求，部分使用了硬编码
+    """
     def __init__(self, ip, port, usr, psw, db, tb, over_write=False):
         self._ip = ip
         self._usr = usr
@@ -125,14 +129,15 @@ class DB_Connecter(object):
         self._db = db
         self._port = port
         self._tb = tb
-        self._over_write = over_write  # 是否覆盖写入 table    ，True 则有表格则删除重新创建
+        self._over_write = over_write  # 是否覆盖写入 table，True 则有表格则删除重新创建
         self.db = pymysql.Connect(host=self._ip,
                                   port=self._port,
                                   user=self._usr,
                                   password=self._psw)
 
+    # 延迟对库名引用，否则创建对象时可能会出现没有库名的错误
     def _connect_t(self):
-        self.db = pymysql.connect(host=self._ip,
+        self.db = pymysql.Connect(host=self._ip,
                                   port=self._port,
                                   user=self._usr,
                                   passwd=self._psw,
@@ -142,19 +147,25 @@ class DB_Connecter(object):
     def inserts(self, inserts_list, exe_num=100):
         t1 = time.time()
         self._connect_t()
+        c = self.db.cursor()
+        c.execute("create table if not exists {} (id int ,age int, name char(30),email char(50))".format(self._tb))
+        
         if self._over_write:
             self._del_old_table()
-        c = self.db.cursor()
+        
+
+        # 这里暂时用了硬编码
         _insert =   "insert into "+ self._tb +\
                     "(id, age, name, email) " +\
                     "values (%s, %s, %s, %s)"
-
+        
         len_list = len(inserts_list)
         num,x = int(len_list/exe_num),len_list%exe_num
         if x > 0:
             num += 1
 
         p = int(num/10)
+        insert_num = 0
         for i in range(num):
             if i%p==0:
                 print('inserting %.2f %%'%(float(i)/num*100))
@@ -162,18 +173,21 @@ class DB_Connecter(object):
             try:
                 c.executemany(_insert,inserts_list[sliceA:sliceB])
                 self.db.commit()
+                insert_num += len(inserts_list[sliceA:sliceB])
             except:
                 print('[ WARNING ] insert fail:','%d/%d'%(i,num))
                 self.db.rollback()
         self.db.close()
-        print("insert cost time: %.3f s"%(time.time()-t1))
+        print("insert cost time: %.3f s. insert num: %d."%(time.time()-t1, insert_num))
 
+    # 删除同名旧表，创建新表
     def _del_old_table(self):
         c = self.db.cursor()
         c.execute("drop table if exists {}".format(self._tb))
-        c.execute("create table "+self._tb+" (id int ,age int, name char(30),email char(50))")
+        c.execute("create table {} (id int ,age int, name char(30),email char(50))".format(self._tb))
         c.close()
 
+    # 如果不存在，则创建相应的库名
     def create_newdb(self):
         c = self.db.cursor()
         c.execute("create database if not exists {}".format(self._db))
@@ -189,8 +203,7 @@ class DB_Connecter(object):
 import time
 
 if __name__ == '__main__':
-    # 这里如果不打印清洗过程添加参数 logging=False
-    loader = DataLoader('./data.tar.gz')
+    loader = DataLoader('./data.tar.gz')# 这里如果不打印清洗过程添加参数 logging=False
     datas  = loader.load_datas()
 
 
@@ -202,9 +215,9 @@ if __name__ == '__main__':
             'test_db',      # 库名
             "test_table")   # 表名
                 
-    conn = DB_Connecter(*args, over_write=True)
-    conn.create_newdb()
-    conn.inserts(datas,exe_num=500)# 为提高插入效率默认每一百个提交一次
+    conn = DB_Connecter(*args)          # 如果需要覆盖操作则需要添加参数 over_write=True
+    conn.create_newdb()                 # 无则创建 database
+    conn.inserts(datas,exe_num=1000)    # 为提高插入效率批量插入，默认值 exe_num=100
     
     
 
