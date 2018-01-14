@@ -1,0 +1,19 @@
+# 2018/1/8
+# 测试环境python3.6
+
+一:每个文件夹下缺失"__init__.py"文件
+二:"settings.py"，第七行"with open"添加" encoding='utf-8' "
+
+三: 
+	1.当反馈信息有一种以上来源时，选择问题匹配度最高的回答，作为唯一输出；
+		01一般在"zhihu.com"、"baike.baidu"、"jingyan.baidu"问题内容匹配度高，选其一
+		02添加以上网站到一个rule列表，判断来源网址是否在其里面
+		03如果在,输出并终止循环;否则，继续循环
+	2.当输出中出现"[专业]"时，直接去掉"[专业]"；
+		replace方法替换掉"[专业]"为""
+	3.当输出调用百度经验时，请进入百度经验的刺激页面，将每一步骤详细显示。
+		01 火狐调试target_url_node['href'],发现地址显示的是重定向后的
+		02 使用requests.get(target_url_node['href'], allow_redirects=False)\
+			c_url = r.headers['Location']   获得重定向后的地址并访问
+		03 	火狐查看器寻找经验内容div的class属性
+		04	for循环打印输出
