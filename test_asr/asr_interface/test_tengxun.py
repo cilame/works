@@ -6,9 +6,9 @@ from tencentcloud.aai.v20180522 import aai_client, models
 import time
 from base64 import b64encode
 
-import config
-SECRETID = config.tengxunyun.SECRETID
-SECRETKEY = config.tengxunyun.SECRETKEY
+from .config import tengxunyun
+SECRETID = tengxunyun.SECRETID
+SECRETKEY = tengxunyun.SECRETKEY
 
 def asr(filename, rate=8000):
     try:

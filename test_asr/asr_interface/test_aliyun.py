@@ -4,7 +4,7 @@ from hashlib import md5,sha1
 from base64 import b64encode
 import hmac, json, sys
 
-import config
+from .config import aliyun
 
 GMT_FORMAT = '%a, %d %b %Y %H:%M:%S GMT'
 
@@ -17,7 +17,7 @@ def get_signature(content,
     bodymd5  = b64encode(md5(content).digest())
     md52str  = b64encode(md5(bodymd5).digest()).decode()
     str2sign = method+"\n"+accept+"\n"+md52str+"\n"+content_type+"\n"+date
-    signature = hmac.new(config.aliyun.ACCESSKEY_SECRET.encode(),
+    signature = hmac.new(aliyun.ACCESSKEY_SECRET.encode(),
                          str2sign.encode(),
                          sha1).digest()
     return b64encode(signature).decode()
@@ -50,7 +50,7 @@ def asr(filename,rate=8000,raw="wav",model="customer-service-8k"):
     data_len     = "%d"%len(content)
     #TODO assert content len < 2M?
 
-    accesskey_id = config.aliyun.ACCESSKEY_ID
+    accesskey_id = aliyun.ACCESSKEY_ID
     signature    = get_signature(content,
                                  method,
                                  content_type,

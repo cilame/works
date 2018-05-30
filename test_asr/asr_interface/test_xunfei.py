@@ -7,7 +7,7 @@ import hashlib
 import base64
 import sys
 
-import config
+from .config import xunfei
 
 def asr(filename, rate=16000):
     with open(filename, 'rb') as f:
@@ -20,11 +20,11 @@ def asr(filename, rate=16000):
     if rate == 8000 : engine_type = "sms8k"
     param = {"engine_type": engine_type, "aue": "raw"}
 
-    x_appid = config.xunfei.APPID
+    x_appid = xunfei.APPID
     x_param = base64.b64encode(json.dumps(param).replace(' ', '').encode())
     x_time = int(int(round(time.time() * 1000)) / 1000)
 
-    api_key = config.xunfei.APIKey
+    api_key = xunfei.APIKey
     x_checksum = hashlib.md5(api_key.encode() + str(x_time).encode() + x_param).hexdigest()
     x_header = {'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
                 'X-Appid': x_appid,

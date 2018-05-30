@@ -1,7 +1,7 @@
 import os, sys
 from aip import AipSpeech
 
-import config
+from .config import baiduyun
 
 client = None
 
@@ -10,9 +10,9 @@ def asr(filename,rate=16000):
     使用使用百度语音识别需要先调用AipSpeech生成小服务
     client = AipSpeech(APP_ID, API_KEY, SECRET_KEY)
     '''
-    APP_ID = config.baiduyun.APP_ID
-    API_KEY = config.baiduyun.API_KEY
-    SECRET_KEY = config.baiduyun.SECRET_KEY
+    APP_ID = baiduyun.APP_ID
+    API_KEY = baiduyun.API_KEY
+    SECRET_KEY = baiduyun.SECRET_KEY
 
     global client
     if not client:
